@@ -11,31 +11,51 @@ Il riconoscimento facciale avverrà facendo il confronto dell'immagine fornita c
 si stabilirà il risultato in base alle percentuali di corrispondenza
 '''
 
+# Function that requires file's path for copy them
+def FileCopy():
+    while True:
+        src_path = input("Inserire il percorso sorgente del file che si desidera copiare (compreso il nome del file): ")
+        if os.path.isdir(src_path) == False:
+            continue
+        dst_path = input("Inserire il percorso di destinazione del file che si desidera copiare (compreso il nome del file): ")
+        break
+    shutil.copy(src_path, dst_path)
+
+# Function to research model_name among folders
+# Args:
+#   - name of the folder where are stored models
+# Returns:
+#   - True on existing folder (or correctly created)
+#   - False on unexisting folder or on error
+def SelectSubject(name):
+    if not os.path.isdir(name):
+        # If the model_name inserted has no match, user has to define the behaviour of the program
+        create_new = input("Il nome non risulta essere nella lista. Digitare 1 per aggiungerlo alla lista, 2 per cercare un altro nome: ")
+        if create_new == "1":
+            # Create folder
+            os.makedirs(os.getcwd() + "/" + name)
+            # Requesting path of an image which represents the subject
+            print("Ora seguire le istruzioni per inserire i file che si desidera utilizzare come modelli per i confronti.")
+            FileCopy()
+        else:
+            return False
+    return True
+
+
+
+# ------- MAIN PROGRAM -------
 listed = False
 while not listed:
-    # searching the name of the subject that the user is looking for around folders
+    # Searching the name of the subject that the user is looking for around folders
     model_name = input("Chi stai cercando? ")
-    if not os.path.isdir(model_name):
-        # if the model_name inserted has no match, user has to define the behaviour of the program
-        new_model = input("Il nome non risulta essere nella lista. Digitare 1 per aggiungerlo alla lista, 2 per cercare un altro nome: ")
-        if new_model == "1":
-            # create folder and add one or more images
-            os.makedirs(os.getcwd() + "/" + model_name)
-            file_path = input("Inserire il percorso completo dell'immagine che si desidera fornire come modello (compreso il suo nome): ")
-            file_name = input("Inserire il nome dell'immagine modello: ")
-            shutil.copy(file_path, model_name + "/" + file_name)
-            listed = True
-        else:
-            continue
-    else:
-        listed = True
+    listed = SelectSubject(model_name)
 model_name += "/"
 
-# list of all images contained into the folder about the model
+# List of all images contained into the folder about the model
 models_list = os.listdir(model_name)
 print("Models list: ", models_list)
 
-# obtaining the path of the folder to inspect
+# Obtaining the path of the folder to inspect
 exists = False
 while not exists:
     inspected_directory = input("Inserisci il percorso della cartella in cui desideri cercare il soggetto: ")
@@ -45,11 +65,11 @@ while not exists:
         exists = True
 inspected_directory += "/"
 
-# obtaining the list of all files contained in the folder
+# Obtaining the list of all files contained in the folder
 images_list = os.listdir(inspected_directory)
 print("Images list: ", images_list)
 
-# comparing images one by one with all models I have stored
+# Comparing images one by one with all models I have stored
 work = True
 while work:
     work = False
@@ -59,7 +79,7 @@ while work:
             img = face_recognition.load_image_file(inspected_directory + current_img)
             img_encoding = face_recognition.face_encodings(img)[0]
         except IndexError:
-            print("Unable to recognize at least one face into the image.\n"
+            print("[WARNING]Unable to recognize at least one face into the image.\n"
                   "Moving image in " + os.getcwd() + "/Faceless...")
             if not os.path.isdir(os.getcwd() + "/Faceless"):
                 print("That folder does not exists. Creating...")
@@ -71,18 +91,18 @@ while work:
                 model = face_recognition.load_image_file(model_name + current_model)
                 model_encoding = face_recognition.face_encodings(model)[0]
             except IndexError:
-                print("Unable to recognize at least one face in model: " + current_model + ".\n"
+                print("[ERROR]Unable to recognize at least one face in model: " + current_model + ".\n"
                       "Fatal error. Exiting...")
                 quit()
             comparison_result = face_recognition.compare_faces([model_encoding], img_encoding)
-            # counting positive and negative outcomes
+            # Counting positive and negative outcomes
             if any(comparison_result):
-                # match found, copying image in Exstracted folder
+                # Match found, moving image in Extracted folder
                 print("Match found between " + current_img + " and " + current_model)
-                print("Subject has been recognized.\n"
-                  "Copying image in " + os.getcwd() + "/Extracted...")
+                print("*!* Subject has been recognized. *!*\n"
+                  "Moving image in " + os.getcwd() + "/Extracted...")
                 if not os.path.isdir("Extracted"):
                     print("That folder does not exists. Creating...")
                     os.makedirs(os.getcwd() + "/Extracted")
-                shutil.copy(inspected_directory + current_img, os.getcwd() + "/Extracted/" + current_img)
+                shutil.move(inspected_directory + current_img, os.getcwd() + "/Extracted/" + current_img)
                 break
