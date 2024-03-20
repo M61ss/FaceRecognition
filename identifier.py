@@ -123,7 +123,7 @@ for current_img in images_list:
     # Comparing all models encodings with the encoding of the current image
     print("Comparing...")
     comparison_result = face_recognition.compare_faces(model_encodings_list, img_encoding)
-    # Verifing if there are any matches
+    # Verifying if there are any matches
     if any(comparison_result):
         # Match found, moving image in Extracted folder (creating it in case it doesn't exists)
         print("*!*" + model_name + " has been recognized in " + current_img + ". *!*\n"
